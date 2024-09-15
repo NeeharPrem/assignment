@@ -3,9 +3,9 @@ import { Line } from "react-chartjs-2";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Button, Card, Alert, Container, Row, Col, Form } from "react-bootstrap";
+import { Button, Card, Alert, Container, Row, Col, Form, ListGroup } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import './App.css'
+import './App.css';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,6 +26,7 @@ const App = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [error, setError] = useState(null);
+  const [topCustomers, setTopCustomers] = useState([]);
 
   const fetchRevenueAndProjectionData = async () => {
     if (!startDate || !endDate) {
@@ -45,9 +46,7 @@ const App = () => {
       const projection = projectionResponse.data;
 
       const revenueMonths = revenue.map(item => item.month);
-      const revenueValues = revenue.map(item => item.total_revenue);
       const projectionMonths = projection.map(item => item.month);
-      const projectionValues = projection.map(item => item.projected_revenue);
 
       const allMonths = [...new Set([...revenueMonths, ...projectionMonths])].sort();
 
@@ -68,6 +67,16 @@ const App = () => {
     } catch (error) {
       console.error("Error fetching revenue data", error);
       setError("An error occurred while fetching data. Please try again.");
+    }
+  };
+
+  const fetchTopCustomers = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/topcustomers");
+      setTopCustomers(response.data);
+    } catch (error) {
+      console.error("Error fetching top customers", error);
+      setError("An error occurred while fetching top customers. Please try again.");
     }
   };
 
@@ -121,6 +130,30 @@ const App = () => {
     },
   };
 
+  const exportToCSV = (labels, revenueData, projectionData) => {
+    const header = "Month,Monthly Revenue,Projected Revenue";
+    const rows = labels.map((label, index) =>
+      `${label},${revenueData[index] || ""},${projectionData[index] || ""}`
+    );
+    const csvContent = [header, ...rows].join("\n");
+    return csvContent;
+  };
+
+  const downloadCSV = () => {
+    const csvContent = exportToCSV(labels, revenueData, projectionData);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "chart-data.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
     <Container className="mt-4">
       <Card className="mb-4">
@@ -150,8 +183,11 @@ const App = () => {
               </Form.Group>
             </Col>
           </Row>
-          <Button onClick={fetchRevenueAndProjectionData} variant="primary">
+          <Button onClick={fetchRevenueAndProjectionData} variant="primary" className="mr-2">
             Fetch Data
+          </Button>
+          <Button onClick={fetchTopCustomers} variant="secondary" style={{ marginLeft: '2px' }}>
+            Fetch Top Customers
           </Button>
         </Card.Body>
       </Card>
@@ -163,17 +199,39 @@ const App = () => {
         </Alert>
       )}
 
-      {labels && labels.length > 0 ? (
-        <Card>
-          <Card.Body>
-            <Line data={chartData} options={options} />
-          </Card.Body>
-        </Card>
-      ) : (
-        <Alert variant="info">
-          No data available. Please select a date range and fetch data.
-        </Alert>
-      )}
+      <Row className="mb-4">
+        {labels && labels.length > 0 && (
+          <Col md={8}>
+            <Card>
+              <Card.Body>
+                <Line data={chartData} options={options} />
+                <Button onClick={downloadCSV} variant="success" className="mt-2">
+                  Export to CSV
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
+
+        {topCustomers.length > 0 && (
+          <Col md={4}>
+            <Card className="h-100">
+              <Card.Header>
+                <Card.Title as="h2">Top Customers</Card.Title>
+              </Card.Header>
+              <Card.Body>
+                <ListGroup>
+                  {topCustomers.map(customer => (
+                    <ListGroup.Item key={customer.customer_name}>
+                      {customer.customer_name}: ₹ {customer.total_revenue}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
+      </Row>
     </Container>
   );
 };
