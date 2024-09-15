@@ -22,6 +22,7 @@ This application analyzes customer order data to calculate revenue  and also pro
    ```
    npm install
    ```
+   This will install dependencies for both Server and Frontend
 
 3. Set up the database:
    - Ensure MySQL is installed and running on your system.
@@ -104,7 +105,7 @@ CREATE TABLE IF NOT EXISTS orders(
     UNIQUE KEY (customer_id, ordered_item, order_amount, order_date)
 );
 
--- Sample data insertion statements
+-- Sample data insertion statements --
 ```
 
 ## Example API Responses
