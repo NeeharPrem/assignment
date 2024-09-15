@@ -27,9 +27,9 @@ This application analyzes customer order data to calculate revenue  and also pro
    - Ensure MySQL is installed and running on your system.
 4. Configure environment variables:
    - Create a `.env` file in the root directory.
-   - Add the following variables with your specific values:
+   - Add the following variables with specific values shown below:
      ```
-     DB_USER= username
+     DB_USERNAME= username
      DB_PASSWORD= password
      ```
 
@@ -50,8 +50,8 @@ This also starts front on `http://localhost:5173`.
 
 ### Projection Methods
 1. Linear Regression:
-   - Fits a linear trend line to the historical data.
-   - Projects future revenue based on the overall trend of the data.
+   - Linear Regression added for projection of data.
+   - Projects future revenue based on the previous data trend.
 
 ## API Endpoints
 
@@ -63,7 +63,7 @@ This also starts front on `http://localhost:5173`.
 2. GET `/api/projection`
    - Provides revenue projections for the next three months.
    - Query parameters: `startDate`, `endDate`.
-   - Example: `/api/projection?startDate=2024-01-01&endDate=2024-12-31&method=linearRegression`
+   - Example: `/api/projection?startDate=2024-01-01&endDate=2024-12-31`
 
 3. GET `/api/topcustomers`
    - Retrieves top customers based on their purchase data.
@@ -75,8 +75,6 @@ This also starts front on `http://localhost:5173`.
 
 2. Data Export:
    - Allows exporting of revenue data to CSV format.
-   - Endpoint: GET `/api/export-revenue`
-   - Example: `/api/export-revenue?startDate=2024-01-01&endDate=2024-12-31`
 
 3. Frontend Dashboard:
    - A simple dashboard to see the api result.
@@ -87,24 +85,26 @@ This also starts front on `http://localhost:5173`.
 The `db.sql` file includes the following:
 
 ```sql
-CREATE DATABASE revenue_analysis;
-USE revenue_analysis;
+CREATE DATABASE IF NOT EXISTS revenue_data;
+USE revenue_data;
 
-CREATE TABLE customers (
+CREATE TABLE IF NOT EXISTS customers(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    name VARCHAR(100) NOT NULL,
+    UNIQUE KEY (name)
 );
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders(
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT,
     ordered_item VARCHAR(100) NOT NULL,
-    order_amount DECIMAL(10, 2) NOT NULL,
+    order_amount DECIMAL(10,2) NOT NULL,
     order_date DATE NOT NULL,
-    FOREIGN KEY (customer_id) REFERENCES customers(id)
+    FOREIGN KEY (customer_id) REFERENCES customers(id),
+    UNIQUE KEY (customer_id, ordered_item, order_amount, order_date)
 );
 
--- Sample data insertion statements are included in the SQL file
+-- Sample data insertion statements
 ```
 
 ## Example API Responses
