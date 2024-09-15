@@ -27,6 +27,7 @@ const App = () => {
   const [endDate, setEndDate] = useState(null);
   const [error, setError] = useState(null);
   const [topCustomers, setTopCustomers] = useState([]);
+  const [growthData, setGrowthData] = useState([]);
 
   const fetchRevenueAndProjectionData = async () => {
     if (!startDate || !endDate) {
@@ -55,6 +56,11 @@ const App = () => {
         return data ? data.total_revenue : null;
       });
 
+      const growthData = allMonths.map(month => {
+        const data = revenue.find(item => item.month === month);
+        return data ? data.growth_rate : null;
+      });
+
       const projectionData = allMonths.map(month => {
         const data = projection.find(item => item.month === month);
         return data ? data.projected_revenue : null;
@@ -62,6 +68,7 @@ const App = () => {
 
       setLabels(allMonths);
       setRevenueData(revenueData);
+      setGrowthData(growthData);
       setProjectionData(projectionData);
 
     } catch (error) {
@@ -99,6 +106,15 @@ const App = () => {
         fill: true,
         tension: 0.3,
       },
+      {
+        label: "Growth Rate (%)",
+        data: growthData,
+        borderColor: "rgba(54, 162, 235, 1)",
+        backgroundColor: "rgba(54, 162, 235, 0.2)",
+        fill: false,
+        tension: 0.3,
+        yAxisID: 'y1',
+      },
     ],
   };
 
@@ -110,7 +126,7 @@ const App = () => {
       },
       title: {
         display: true,
-        text: "Revenue and Projection Data",
+        text: "Revenue, Projection, and Growth Rate",
       },
     },
     scales: {
@@ -119,6 +135,14 @@ const App = () => {
         title: {
           display: true,
           text: "Revenue ($)",
+        },
+      },
+      y1: {
+        beginAtZero: true,
+        position: 'right',
+        title: {
+          display: true,
+          text: "Growth Rate (%)",
         },
       },
       x: {
@@ -130,17 +154,17 @@ const App = () => {
     },
   };
 
-  const exportToCSV = (labels, revenueData, projectionData) => {
-    const header = "Month,Monthly Revenue,Projected Revenue";
+  const exportToCSV = (labels, revenueData, projectionData, growthData) => {
+    const header = "Month,Monthly Revenue,Projected Revenue,Growth Rate";
     const rows = labels.map((label, index) =>
-      `${label},${revenueData[index] || ""},${projectionData[index] || ""}`
+      `${label},${revenueData[index] || ""},${projectionData[index] || ""},${growthData[index] || ""}`
     );
     const csvContent = [header, ...rows].join("\n");
     return csvContent;
   };
 
   const downloadCSV = () => {
-    const csvContent = exportToCSV(labels, revenueData, projectionData);
+    const csvContent = exportToCSV(labels, revenueData, projectionData, growthData);
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     if (link.download !== undefined) {
@@ -187,7 +211,7 @@ const App = () => {
             Fetch Data
           </Button>
           <Button onClick={fetchTopCustomers} variant="secondary" style={{ marginLeft: '2px' }}>
-            Fetch Top Customers
+            Top Customers
           </Button>
         </Card.Body>
       </Card>
@@ -200,18 +224,16 @@ const App = () => {
       )}
 
       <Row className="mb-4">
-        {labels && labels.length > 0 && (
-          <Col md={8}>
-            <Card>
-              <Card.Body>
-                <Line data={chartData} options={options} />
-                <Button onClick={downloadCSV} variant="success" className="mt-2">
-                  Export to CSV
-                </Button>
-              </Card.Body>
-            </Card>
-          </Col>
-        )}
+        <Col md={topCustomers.length > 0 ? 8 : 12}>
+          <Card>
+            <Card.Body>
+              <Line data={chartData} options={options} />
+              <Button onClick={downloadCSV} variant="success" className="mt-2">
+                Export to CSV
+              </Button>
+            </Card.Body>
+          </Card>
+        </Col>
 
         {topCustomers.length > 0 && (
           <Col md={4}>

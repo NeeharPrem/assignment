@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { getRevenueProjections } = require('../controllers/projectionController');
+const { getProjection} = require('../controllers/projectionController');
 
-router.get('/', getRevenueProjections);
+router.get('/', getProjection);
 
 module.exports = router;

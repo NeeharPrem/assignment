@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "nodemon server.js",
-    "client": "cd views/front-end && npm run dev"
+    "client": "cd views/front-end && npm run dev",
+    "postinstall": "cd views/front-end && npm install"
   },
   "keywords": [],
   "author": "",

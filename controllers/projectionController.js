@@ -1,6 +1,6 @@
 const { getMonthlyRevenue } = require('../Model/revenueModel');
 
-const getRevenueProjections = (req, res) => {
+const getProjection = (req, res) => {
     const { startDate, endDate } = req.query;
 
     if (!startDate || !endDate) {
@@ -23,19 +23,29 @@ const getRevenueProjections = (req, res) => {
 const calculateProjection = (data) => {
     if (data.length === 0) return [];
 
-    const revenues = data.map(row => parseFloat(row.total_revenue));
-    const average = revenues.reduce((a, b) => a + b, 0) / revenues.length;
+    const xValues = data.map((_, index) => index);
+    const yValues = data.map(row => parseFloat(row.total_revenue));
+
+    const n = xValues.length;
+    const sumX = xValues.reduce((a, b) => a + b, 0);
+    const sumY = yValues.reduce((a, b) => a + b, 0);
+    const sumXY = xValues.reduce((acc, x, i) => acc + x * yValues[i], 0);
+    const sumXX = xValues.reduce((acc, x) => acc + x * x, 0);
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
 
     const lastMonth = new Date(data[data.length - 1].month + '-01');
 
     return Array.from({ length: 3 }, (_, i) => {
         const projectedMonth = new Date(lastMonth);
         projectedMonth.setMonth(lastMonth.getMonth() + i + 1);
+        const projectedRevenue = intercept + slope * (n + i);
         return {
             month: projectedMonth.toISOString().slice(0, 7),
-            projected_revenue: Number(average.toFixed(2))
+            projected_revenue: Number(projectedRevenue.toFixed(2))
         };
     });
 };
 
-module.exports = { getRevenueProjections };
+module.exports = {getProjection};
